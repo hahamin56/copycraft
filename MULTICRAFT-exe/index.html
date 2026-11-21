@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MULTICRAFT</title>
+<link rel="stylesheet" href="node_modules/@fontsource/press-start-2p/index.css"><link rel="stylesheet" href="node_modules/@fontsource/press-start-2p/cyrillic.css">
+<style>
+:root{--b1:#8a8a8a;--b2:#686868;--hi:#c4c4c4;--lo:#3a3a3a;--acc:#5fae3a;--panel:rgba(26,26,26,.84);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:linear-gradient(#3d85d6,#bfe3ff 55%);font-family:'Press Start 2P','Press Start 2P Cyrillic','Courier New',monospace;color:#fff;user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.btn{font:inherit;font-size:11px;color:#fff;text-shadow:2px 2px #333;background:linear-gradient(var(--b1),var(--b2));border:2px solid #000;box-shadow:inset 2px 2px var(--hi),inset -2px -2px var(--lo);padding:12px 14px;cursor:pointer}
+.btn:hover{background:linear-gradient(#8fae72,#5f7f45)}
+.btn.on{background:linear-gradient(#78c04f,#3f7d27)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:4vh 14px;box-sizing:border-box;background:radial-gradient(transparent 35%,rgba(0,0,0,.6))}
+.logo{font-size:clamp(24px,6vw,56px);margin:0 0 3vh;text-shadow:4px 4px 0 #3a3a3a,7px 7px 0 #000,0 0 36px rgba(95,174,58,.7)}
+.tabs{display:flex;gap:6px;width:min(780px,100%)}.tabs .btn{flex:1;font-size:10px}
+.pane{display:none;width:min(780px,100%);box-sizing:border-box;background:var(--panel);border:2px solid #000;box-shadow:inset 2px 2px #555;padding:20px;backdrop-filter:blur(4px);font-size:10px;line-height:1.9;max-height:66vh;overflow:auto}
+.pane.on{display:block}
+input[type=text]{font:inherit;font-size:11px;background:#101010;color:#fff;border:2px solid #555;padding:10px;width:100%;box-sizing:border-box}
+.row{display:flex;gap:18px;flex-wrap:wrap}.col{flex:1;min-width:230px}
+#pv{width:192px;height:192px;image-rendering:pixelated;border:2px solid #000;box-shadow:0 0 0 2px #555;background:#000}
+.set{margin-bottom:16px}.set div{display:flex;justify-content:space-between;margin-bottom:6px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}.seg .btn{flex:1;font-size:9px}
+.mut{color:#b8b8b8}
+#hud{position:fixed;inset:0;pointer-events:none;display:none}
+#cross{position:absolute;left:50%;top:50%;width:20px;height:20px;transform:translate(-50%,-50%);mix-blend-mode:difference}
+#cross:before,#cross:after{content:"";position:absolute;background:#fff}
+#cross:before{left:9px;top:0;width:2px;height:20px}#cross:after{top:9px;left:0;height:2px;width:20px}
+#fps{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 10px);font-size:10px;text-shadow:2px 2px #000}
+#help{position:absolute;left:12px;bottom:12px;font-size:8px;line-height:1.8;text-shadow:2px 2px #000;max-width:40vw}
+#hb{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);display:flex;gap:4px;background:rgba(0,0,0,.45);padding:4px;border:2px solid #000}
+.slot{width:36px;height:36px;border:3px solid #555;background-size:576px 36px;image-rendering:pixelated}.slot.on{border-color:#fff}
+#pause{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;flex-direction:column;gap:12px;align-items:center;justify-content:center}
+#pause .btn{width:280px}
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#000c;padding:10px 14px;font-size:9px;display:none;z-index:9}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="menu">
+ <h1 class="logo">MULTICRAFT</h1>
+ <nav class="tabs"><button class="btn" data-t="mp">Мультиплеер</button><button class="btn on" data-t="sp">Одиночная игра</button><button class="btn" data-t="st">Настройки</button></nav>
+ <section class="pane" id="mp">
+  <p>Адрес сервера</p><input type="text" placeholder="127.0.0.1:30000"><p></p>
+  <button class="btn" disabled>Подключиться</button>
+  <p class="mut">Сетевой режим в разработке: сначала доводим мир и движок.</p>
+ </section>
+ <section class="pane on" id="sp">
+  <div class="row">
+   <div><canvas id="pv" width="96" height="96"></canvas><div id="info" class="mut" style="margin-top:8px"></div></div>
+   <div class="col">
+    <p>Название мира</p><input type="text" id="wn" value="Новый мир">
+    <p>Сид</p><input type="text" id="seed">
+    <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="rnd">Случайный</button><button class="btn" id="smart">Умный подбор</button></p>
+    <button class="btn on" id="play" style="width:100%;font-size:14px;padding:16px">ИГРАТЬ</button>
+   </div>
+  </div>
+ </section>
+ <section class="pane" id="st"></section>
+</div>
+<div id="hud"><div id="cross"></div><div id="fps"></div><div id="help">WASD — ходьба · Пробел — прыжок · Shift — бег · F — полёт · ЛКМ/ПКМ — ломать/ставить · 1–8 — блок</div><div id="hb"></div></div>
+<div id="pause"><button class="btn on" id="resume">Продолжить</button><button class="btn" id="quit">В главное меню</button></div>
+<div id="toast"></div>
+<script src="node_modules/three/build/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),WL=22,CH=64;
+const S=Object.assign({rd:6,fps:240,gfx:'high',fov:75,sens:1},(()=>{try{return JSON.parse(localStorage.getItem('mc')||'{}')}catch(e){return{}}})());
+const save=()=>{try{localStorage.setItem('mc',JSON.stringify(S))}catch(e){}};
+/* ---------- текстуры (процедурные, 16x16) ---------- */
+const atlas=(()=>{const c=document.createElement('canvas');c.width=256;c.height=16;const g=c.getContext('2d');let r=12345;const rnd=()=>(r=(Math.imul(r,1664525)+1013904223)>>>0)/4294967296;
+const P=(t,x,y,s)=>{g.fillStyle=s;g.fillRect(t*16+x,y,1,1)},mx=(b,v)=>{const k=1+(rnd()-.5)*v;return`rgb(${b[0]*k|0},${b[1]*k|0},${b[2]*k|0})`};
+const fill=(t,b,v)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++)P(t,x,y,mx(b,v))};
+fill(0,[104,168,58],.32);fill(2,[134,96,67],.32);fill(3,[126,126,126],.26);fill(4,[220,208,144],.12);fill(9,[244,248,252],.07);fill(8,[40,92,190],.12);
+fill(1,[134,96,67],.32);for(let x=0;x<16;x++){const h=4+(rnd()<.5?1:0);for(let y=0;y<h;y++)P(1,x,y,mx([104,168,58],.32))}
+for(let y=0;y<16;y++)for(let x=0;x<16;x++){P(5,x,y,mx(x%4===0?[70,52,32]:[104,82,52],.18));const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5));P(6,x,y,mx(d%3<1.2?[120,92,56]:[158,126,80],.14));P(10,x,y,mx(y%4===3?[110,82,46]:[170,136,82],.12));P(7,x,y,mx([52,128,40],.4))}
+for(let i=0;i<60;i++){g.clearRect(7*16+(rnd()*16|0),rnd()*16|0,1,1)}
+for(let i=0;i<20;i++)P(3,rnd()*16|0,rnd()*16|0,'rgb(80,80,80)');
+return c})();
+const TL={1:[0,1,2],2:[2,2,2],3:[3,3,3],4:[4,4,4],5:[6,5,6],6:[7,7,7],7:[8,8,8],8:[9,9,9],9:[10,10,10]};
+/* ---------- генерация мира ---------- */
+let SEED=1;
+function hash(x,y,s){let h=Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(s,1274126177)|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function vn(x,y,s){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),a=hash(xi,yi,s),b=hash(xi+1,yi,s),c=hash(xi,yi+1,s),d=hash(xi+1,yi+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+function fbm(x,y,s){let t=0,a=.5,f=1;for(let i=0;i<4;i++){t+=a*vn(x*f,y*f,s+i*101);a/=2;f*=2}return t}
+const height=(x,z)=>{const c=fbm(x/180,z/180,SEED),m=fbm(x/64+50,z/64,SEED+7);return Math.max(2,Math.min(60,Math.floor(20+(c-.5)*40+m*m*28)))};
+const seedNum=s=>{s=String(s).trim()||'0';if(/^-?\d+$/.test(s))return parseInt(s)|0;let h=0;for(const c of s)h=Math.imul(h,31)+c.charCodeAt(0)|0;return h};
+const ADJ=['Багровая','Тихая','Золотая','Северная','Туманная','Дикая','Хрустальная','Забытая','Звёздная','Изумрудная'],NOU=['Долина','Гора','Бухта','Пустошь','Роща','Заря','Река','Вершина','Лагуна','Тундра'];
+const pick=a=>a[Math.random()*a.length|0],randSeed=()=>pick(ADJ)+'-'+pick(NOU)+'-'+(1000+Math.random()*9000|0);
+function score(sn){const o=SEED;SEED=seedNum(sn);let land=0,s=0,q=0,n=0;for(let i=-16;i<16;i++)for(let j=-16;j<16;j++){const h=height(i*8,j*8);if(h>WL+1)land++;s+=h;q+=h*h;n++}SEED=o;const m=s/n;return-Math.abs(land/n-.65)*3+Math.min(Math.sqrt(q/n-m*m),12)/12}
+function preview(){const o=SEED;SEED=seedNum($('#seed').value);const g=$('#pv').getContext('2d'),N=96,im=g.createImageData(N,N);let w=0,mh=0;
+ for(let j=0;j<N;j++)for(let i=0;i<N;i++){const h=height((i-N/2)*4,(j-N/2)*4);let c;mh=Math.max(mh,h);
+  if(h<=WL){w++;const k=Math.max(0,1-(WL-h)/14);c=[30*k+10,80+70*k|0,170+60*k|0]}else if(h<=WL+1)c=[220,208,144];else if(h>42)c=[245,248,252];else if(h>34)c=[130,130,130];else{const k=.7+(h-WL)/40;c=[90*k,160*k,55*k]}
+  const p=(j*N+i)*4;im.data[p]=c[0];im.data[p+1]=c[1];im.data[p+2]=c[2];im.data[p+3]=255}
+ g.putImageData(im,0,0);SEED=o;const pc=Math.round(w*100/(N*N));$('#info').textContent=(pc>60?'Архипелаг':mh>42?'Горный мир':'Равнины')+' · вода '+pc+'% · пик '+mh}
+/* ---------- чанки ---------- */
+const R=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true,alpha:true}),scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(75,1,.1,500);
+scene.fog=new THREE.Fog(0xbfe3ff,50,100);
+const tex=new THREE.CanvasTexture(atlas);tex.magFilter=tex.minFilter=THREE.NearestFilter;tex.generateMipmaps=false;
+const mS=new THREE.MeshBasicMaterial({map:tex,vertexColors:true,alphaTest:.5}),mW=new THREE.MeshBasicMaterial({map:tex,vertexColors:true,transparent:true,opacity:.72,depthWrite:false});
+const cc=document.createElement('canvas');cc.width=cc.height=64;{const g=cc.getContext('2d');for(let y=0;y<64;y++)for(let x=0;x<64;x++)if(vn(x/9,y/9,5)*.65+vn(x/4,y/4,9)*.35>.56){g.fillStyle='#fff';g.fillRect(x,y,1,1)}}
+const ct=new THREE.CanvasTexture(cc);ct.wrapS=ct.wrapT=THREE.RepeatWrapping;ct.repeat.set(10,10);ct.magFilter=ct.minFilter=THREE.NearestFilter;
+const cl=new THREE.Mesh(new THREE.PlaneGeometry(1600,1600),new THREE.MeshBasicMaterial({map:ct,transparent:true,opacity:.85,fog:false,side:THREE.DoubleSide,depthWrite:false}));cl.rotation.x=-Math.PI/2;scene.add(cl);
+const hl=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.004,1.004,1.004)),new THREE.LineBasicMaterial({color:0}));hl.visible=false;scene.add(hl);
+const chunks=new Map(),edits=new Map(),key=(x,z)=>(x+32768)*65536+(z+32768);
+const getB=(x,y,z)=>{if(y<0)return 3;if(y>=CH)return 0;const c=chunks.get(key(x>>4,z>>4));return c?c.d[(x&15)+16*((z&15)+16*y)]:0};
+function gen(cx,cz){const d=new Uint8Array(16*16*CH),ox=cx*16,oz=cz*16,k=key(cx,cz);let top=WL;
+ for(let z=0;z<16;z++)for(let x=0;x<16;x++){const h=height(ox+x,oz+z),sd=h<=WL+1;top=Math.max(top,h);
+  for(let y=0;y<=h;y++)d[x+16*(z+16*y)]=y===h?(sd?4:h>42?8:1):y>h-4?(sd?4:2):3;
+  for(let y=h+1;y<=WL;y++)d[x+16*(z+16*y)]=7}
+ for(let z=3;z<13;z++)for(let x=3;x<13;x++){const h=height(ox+x,oz+z);if(h<=WL+1||h>42||hash(ox+x,oz+z,SEED+9)<.985)continue;const tr=4+(hash(ox+x,oz+z,SEED+3)*2|0),t=h+tr;if(t+2>=CH)continue;
+  for(let y=h+1;y<=t;y++)d[x+16*(z+16*y)]=5;
+  for(let y=t-2;y<=t+1;y++){const r=y>=t?1:2;for(let dz=-r;dz<=r;dz++)for(let dx=-r;dx<=r;dx++){if(Math.abs(dx)===r&&Math.abs(dz)===r&&hash(dx+x,dz+z,y)<.5)continue;const i=x+dx+16*(z+dz+16*y);if(!d[i])d[i]=6}}
+  top=Math.max(top,t+2)}
+ const e=edits.get(k);if(e)for(const[i,v]of e){d[i]=v;top=Math.max(top,(i>>8)+1)}
+ chunks.set(k,{cx,cz,k,d,top:Math.min(CH-1,top),o:[],meshed:false})}
+const F=[{n:[1,0,0],v:[[1,0,1],[1,0,0],[1,1,0],[1,1,1]],s:.78},{n:[-1,0,0],v:[[0,0,0],[0,0,1],[0,1,1],[0,1,0]],s:.78},{n:[0,1,0],v:[[0,1,1],[1,1,1],[1,1,0],[0,1,0]],s:1},{n:[0,-1,0],v:[[0,0,0],[1,0,0],[1,0,1],[0,0,1]],s:.5},{n:[0,0,1],v:[[0,0,1],[1,0,1],[1,1,1],[0,1,1]],s:.9},{n:[0,0,-1],v:[[1,0,0],[0,0,0],[0,1,0],[1,1,0]],s:.9}];
+F.forEach(f=>f.t=[0,1,2].filter(a=>!f.n[a]));
+const UV=[[0,0],[1,0],[1,1],[0,1]],AOV=[.5,.68,.84,1],opq=b=>b&&b!==6&&b!==7?1:0;
+function clear(ch){for(const o of ch.o){scene.remove(o);o.geometry.dispose()}ch.o=[]}
+function mesh(cx,cz){const ch=chunks.get(key(cx,cz));clear(ch);ch.meshed=true;const AO=S.gfx!=='low',A={p:[],u:[],c:[],i:[]},W={p:[],u:[],c:[],i:[]},d=ch.d,ox=cx*16,oz=cz*16;
+ const nb=(x,y,z)=>y<0?3:y>=CH?0:(x>=0&&x<16&&z>=0&&z<16)?d[x+16*(z+16*y)]:getB(ox+x,y,oz+z);
+ for(let y=0;y<=ch.top;y++)for(let z=0;z<16;z++)for(let x=0;x<16;x++){const b=d[x+16*(z+16*y)];if(!b)continue;const vr=b===7?1:.93+hash(ox+x,y*131+oz+z,7)*.14;
+  for(let k=0;k<6;k++){const f=F[k],n=nb(x+f.n[0],y+f.n[1],z+f.n[2]);if(opq(n)||n===b)continue;
+   const t=TL[b][k===2?0:k===3?2:1],a=b===7?W:A,base=a.p.length/3;
+   for(let q=0;q<4;q++){const v=f.v[q];let ao=1;
+    if(AO&&b!==7){const p=[x+f.n[0],y+f.n[1],z+f.n[2]],s1=v[f.t[0]]*2-1,s2=v[f.t[1]]*2-1,P1=[...p],P2=[...p];P1[f.t[0]]+=s1;P2[f.t[1]]+=s2;const P3=[...P1];P3[f.t[1]]+=s2;
+     const o=u=>opq(getB(ox+u[0],u[1],oz+u[2])),e1=o(P1),e2=o(P2),e3=o(P3);ao=AOV[e1&&e2?0:3-e1-e2-e3]}
+    a.p.push(x+v[0],y+v[1]-(b===7&&v[1]?.12:0),z+v[2]);a.u.push((t+UV[q][0])/16,UV[q][1]);const s=f.s*vr*ao;a.c.push(s,s,s)}
+   a.i.push(base,base+1,base+2,base,base+2,base+3)}}
+ for(const[a,m]of[[A,mS],[W,mW]]){if(!a.i.length)continue;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(a.p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(a.u,2));g.setAttribute('color',new THREE.Float32BufferAttribute(a.c,3));g.setIndex(a.i);const o=new THREE.Mesh(g,m);o.position.set(ox,0,oz);scene.add(o);ch.o.push(o)}}
+const rm=(cx,cz)=>{const c=chunks.get(key(cx,cz));if(c&&c.meshed)mesh(cx,cz)};
+function setB(x,y,z,id){const cx=x>>4,cz=z>>4,ch=chunks.get(key(cx,cz));if(!ch||y<0||y>=CH)return;const i=(x&15)+16*((z&15)+16*y);ch.d[i]=id;ch.top=Math.max(ch.top,y+1);let e=edits.get(ch.k);if(!e)edits.set(ch.k,e=new Map());e.set(i,id);mesh(cx,cz);if((x&15)===0)rm(cx-1,cz);if((x&15)===15)rm(cx+1,cz);if((z&15)===0)rm(cx,cz-1);if((z&15)===15)rm(cx,cz+1)}
+let pcx=1e9,pcz=1e9,need=[],dirty=true;
+function stream(fx,fz){const cx=Math.floor(fx/16),cz=Math.floor(fz/16),Rr=S.rd+1;
+ if(cx!==pcx||cz!==pcz||dirty){pcx=cx;pcz=cz;dirty=false;need=[];for(let dx=-Rr;dx<=Rr;dx++)for(let dz=-Rr;dz<=Rr;dz++){const q=dx*dx+dz*dz;if(q<=Rr*Rr+Rr)need.push([cx+dx,cz+dz,q])}need.sort((a,b)=>a[2]-b[2]);
+  for(const[k,c]of chunks)if(Math.abs(c.cx-cx)>Rr+2||Math.abs(c.cz-cz)>Rr+2){clear(c);chunks.delete(k)}}
+ let g=0,m=0;const lim=S.rd*S.rd+S.rd;
+ for(const n of need){const c=chunks.get(key(n[0],n[1]));if(!c){if(g<2){gen(n[0],n[1]);g++}continue}
+  if(!c.meshed&&n[2]<=lim&&m<1&&chunks.has(key(n[0]+1,n[1]))&&chunks.has(key(n[0]-1,n[1]))&&chunks.has(key(n[0],n[1]+1))&&chunks.has(key(n[0],n[1]-1))){mesh(n[0],n[1]);m++}}}
+function resetWorld(){for(const c of chunks.values())clear(c);chunks.clear();dirty=true;pcx=1e9}
+/* ---------- настройки графики ---------- */
+function applyGfx(){const g=S.gfx;R.setPixelRatio({low:.6,med:1,high:Math.min(devicePixelRatio,1.5),ultra:Math.min(devicePixelRatio,2)}[g]);R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.fov=S.fov;cam.far=(S.rd+1)*24;cam.updateProjectionMatrix();const far=S.rd*16-6;scene.fog.near=far*(g==='ultra'?.45:.6);scene.fog.far=far;cl.visible=g==='high'||g==='ultra'}
+addEventListener('resize',applyGfx);
+const st=$('#st');
+[['rd','Дальность прорисовки',2,12,1,v=>v+' чанк.'],['fps','Лимит FPS',20,240,10,v=>v>=240?'без лимита':v],['fov','Угол обзора',60,110,1,v=>v+'°'],['sens','Чувствительность мыши',.5,2,.1,v=>(+v).toFixed(1)]].forEach(([k,t,mn,mxv,sp,fm])=>{const d=document.createElement('div');d.className='set';d.innerHTML=`<div><span>${t}</span><span class="mut"></span></div><input type="range" min="${mn}" max="${mxv}" step="${sp}">`;const i=d.querySelector('input'),l=d.querySelector('.mut');i.value=S[k];l.textContent=fm(S[k]);i.oninput=()=>{S[k]=+i.value;l.textContent=fm(S[k]);dirty=true;applyGfx();save()};st.appendChild(d)});
+const gd=document.createElement('div');gd.className='set';gd.innerHTML='<div><span>Графика</span></div><div class="seg" style="display:flex"></div>';st.appendChild(gd);
+[['low','Низкая'],['med','Средняя'],['high','Высокая'],['ultra','Ультра']].forEach(([k,t])=>{const b=document.createElement('button');b.className='btn'+(S.gfx===k?' on':'');b.textContent=t;b.onclick=()=>{S.gfx=k;gd.querySelectorAll('.btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');applyGfx();resetWorld();save()};gd.querySelector('.seg').appendChild(b)});
+st.insertAdjacentHTML('beforeend','<p class="mut">Ультра: полное разрешение, тени объёма (AO), облака, дальний туман. Низкая отключает AO и облака.</p>');
+/* ---------- игра ---------- */
+const P={x:0,y:40,z:0,vx:0,vy:0,vz:0,yaw:0,pitch:0,fly:false,ground:false},W_=.3,H_=1.8,EYE=1.62,keys={};let state='menu',locked=false,sp={x:0,z:0,h:30},ang=0;
+const HB=[1,2,3,4,5,6,9,8];let sel=0;
+HB.forEach((b,i)=>{const d=document.createElement('div');d.className='slot'+(i?'':' on');d.style.backgroundImage=`url(${atlas.toDataURL()})`;d.style.backgroundPosition=`-${TL[b][1]*36}px 0`;$('#hb').appendChild(d)});
+const selSlot=i=>{sel=(i+HB.length)%HB.length;[...$('#hb').children].forEach((e,j)=>e.classList.toggle('on',j===sel))};
+function setSeed(s){SEED=s;for(let i=0;i<90;i++){const x=i*8,z=i*3;if(height(x,z)>WL+2){sp={x,z,h:height(x,z)};return}}sp={x:0,z:0,h:height(0,0)}}
+const solid=(x,y,z)=>{const b=getB(Math.floor(x),Math.floor(y),Math.floor(z));return b&&b!==7};
+const col=()=>{for(const i of[-W_,W_])for(const k of[-W_,W_])for(let j=0;j<=H_;j+=.9)if(solid(P.x+i,P.y+j,P.z+k))return true;return false};
+function update(dt){const f=k=>keys[k]?1:0;let mx=f('KeyD')-f('KeyA'),mz=f('KeyS')-f('KeyW');const l=Math.hypot(mx,mz)||1;mx/=l;mz/=l;
+ const spd=P.fly?11:keys.ShiftLeft?5.8:4.3,c=Math.cos(P.yaw),s=Math.sin(P.yaw);P.vx=(mx*c+mz*s)*spd;P.vz=(-mx*s+mz*c)*spd;
+ const inW=getB(Math.floor(P.x),Math.floor(P.y+.5),Math.floor(P.z))===7;
+ if(P.fly)P.vy=(f('Space')-f('ShiftLeft'))*9;else{P.vy=Math.max(P.vy-28*dt,-20);if(inW){P.vy=Math.max(P.vy,-3);if(keys.Space)P.vy=3.6}else if(keys.Space&&P.ground)P.vy=8.6}
+ const mv=(a,d)=>{P[a]+=d;if(col()){P[a]-=d;return true}return false};
+ if(mv('x',P.vx*dt))P.vx=0;if(mv('z',P.vz*dt))P.vz=0;if(mv('y',P.vy*dt)){P.ground=P.vy<0;P.vy=0}else P.ground=false;
+ if(P.y<-20){P.x=sp.x+.5;P.z=sp.z+.5;P.y=sp.h+3}}
+function ray(){const dx=-Math.sin(P.yaw)*Math.cos(P.pitch),dy=Math.sin(P.pitch),dz=-Math.cos(P.yaw)*Math.cos(P.pitch);let prev=null;
+ for(let t=0;t<6;t+=.04){const x=Math.floor(P.x+dx*t),y=Math.floor(P.y+EYE+dy*t),z=Math.floor(P.z+dz*t),b=getB(x,y,z);if(b&&b!==7)return{h:[x,y,z],p:prev};prev=[x,y,z]}return null}
+function startGame(){setSeed(seedNum($('#seed').value));resetWorld();edits.clear();P.x=sp.x+.5;P.z=sp.z+.5;P.y=sp.h+3;P.vy=0;P.fly=false;P.yaw=0;P.pitch=-.2;
+ $('#c').requestPointerLock();state='play';$('#menu').style.display='none';$('#hud').style.display='block';
+ for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)gen((sp.x>>4)+dx,(sp.z>>4)+dz)}
+function toMenu(){state='menu';$('#pause').style.display='none';$('#hud').style.display='none';$('#menu').style.display='flex';hl.visible=false;if(document.pointerLockElement)document.exitPointerLock();setSeed(seedNum('Multicraft-Menu'));resetWorld();edits.clear()}
+const toast=t=>{const e=$('#toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',4500)};
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===$('#c');$('#pause').style.display=state==='play'&&!locked?'flex':'none'});
+document.addEventListener('pointerlockerror',()=>toast('Не удалось захватить мышь. Откройте игру в отдельной вкладке.'));
+addEventListener('mousemove',e=>{if(!locked)return;P.yaw-=e.movementX*.0022*S.sens;P.pitch=Math.max(-1.55,Math.min(1.55,P.pitch-e.movementY*.0022*S.sens))});
+addEventListener('keydown',e=>{keys[e.code]=true;if(state!=='play')return;if(e.code==='Space')e.preventDefault();if(e.code==='KeyF')P.fly=!P.fly;if(/^Digit[1-8]$/.test(e.code))selSlot(+e.code[5]-1)});
+addEventListener('keyup',e=>keys[e.code]=false);
+addEventListener('wheel',e=>{if(locked)selSlot(sel+(e.deltaY>0?1:-1))});
+addEventListener('contextmenu',e=>e.preventDefault());
+$('#c').addEventListener('mousedown',e=>{if(!locked||state!=='play')return;const r=ray();if(!r)return;
+ if(e.button===0)setB(...r.h,0);else if(e.button===2&&r.p){setB(...r.p,HB[sel]);if(col())setB(...r.p,0)}});
+$('#resume').onclick=()=>$('#c').requestPointerLock();$('#quit').onclick=toMenu;
+/* ---------- меню ---------- */
+document.querySelectorAll('.tabs .btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs .btn').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===b.dataset.t))});
+$('#seed').value=randSeed();$('#seed').oninput=preview;
+$('#rnd').onclick=()=>{$('#seed').value=randSeed();preview()};
+$('#smart').onclick=()=>{let best=null,bs=-9;for(let i=0;i<20;i++){const s=randSeed(),v=score(s);if(v>bs){bs=v;best=s}}$('#seed').value=best;preview()};
+$('#play').onclick=startGame;
+/* ---------- цикл ---------- */
+let last=0,fc=0,ft=0;
+function loop(t){requestAnimationFrame(loop);const lim=S.fps>=240?0:1000/S.fps;if(lim&&t-last<lim-2)return;const dt=Math.min((t-last)/1000,.05)||.016;last=t;
+ fc++;if(t-ft>500){$('#fps').textContent=Math.round(fc*1000/(t-ft))+' FPS';fc=0;ft=t}
+ if(state==='play'){if(locked)update(dt);cam.position.set(P.x,P.y+EYE,P.z);cam.rotation.set(P.pitch,P.yaw,0,'YXZ');stream(P.x,P.z);
+  const r=locked?ray():null;hl.visible=!!r;if(r)hl.position.set(r.h[0]+.5,r.h[1]+.5,r.h[2]+.5)}
+ else{ang+=dt*.06;cam.position.set(sp.x+Math.cos(ang)*34,sp.h+20,sp.z+Math.sin(ang)*34);cam.lookAt(sp.x,sp.h,sp.z);stream(sp.x,sp.z)}
+ cl.position.set(cam.position.x,84,cam.position.z);ct.offset.x+=dt*.003;R.render(scene,cam)}
+setSeed(seedNum('Multicraft-Menu'));applyGfx();preview();requestAnimationFrame(loop);
+</script></body></html>
